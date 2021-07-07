@@ -36,6 +36,50 @@ func createNewArticle(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(article)
 }
 
+func deleteArticle(w http.ResponseWriter, r *http.Request) {
+	// we need to parse the path parameters
+	vars := mux.Vars(r)
+	// we will need to extract the `id` of the article
+	// we wish to delete
+	id := vars["id"]
+
+	// we then need to loop through all of our articles
+	for index, article := range Articles{
+		if article.Id == id {
+			// updates our Articles array to remove
+			// the article
+			Articles = append(Articles[:index], Articles[index+1:]...)
+			fmt.Println("testing...")
+		}
+	}
+}
+
+func updateArticle(w http.ResponseWriter, r *http.Request) {
+	// Parse JSON from request
+	// we need to unmarshal the json into the new
+	// updated Articles array replacing the current
+	// Article
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	var updated Article
+	json.Unmarshal(reqBody, &updated)
+
+	// we need to parse the path parameters
+	vars := mux.Vars(r)
+	// we will need to extract the `id` of the article
+	// we wish to delete
+	id := vars["id"]
+
+	// we then need to loop through all of our articles
+	for index, article := range Articles{
+		if article.Id == id {
+			// update our Article array to replace 
+			// the article
+			Articles[index] = updated
+		}
+	}
+}
+
+
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to the HomePage!")
 	fmt.Println("Endpoint Hit: homePage")
@@ -50,6 +94,10 @@ func handleRequests() {
 	// NOTE: ordering is important here! This has to be defined before
 	// the other `article` endpoint
 	myRouter.HandleFunc("/article", createNewArticle).Methods("POST")
+	// add our new DELETE endpoint here
+	myRouter.HandleFunc("/article/{id}", deleteArticle).Methods("DELETE")
+	// add our new UPDATE endpoint here
+	myRouter.HandleFunc("/article/{id}", updateArticle).Methods("PUT")
 	myRouter.HandleFunc("/article/{id}", returnSingleArticle)
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }

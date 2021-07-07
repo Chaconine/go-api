@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"	
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"github.com/gorilla/mux"
@@ -20,6 +21,21 @@ type Article struct {
 // to simulate a database
 var Articles []Article
 
+func createNewArticle(w http.ResponseWriter, r *http.Request) {
+	// get the body of our POST request
+	// unmarshal this into a new Article struct
+	// append this to our Articles array instead of just 
+	// returning string expression
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	var article Article
+	json.Unmarshal(reqBody, &article)
+	// update our global Articles array to include 
+	// our new article
+	Articles = append(Articles, article)
+
+	json.NewEncoder(w).Encode(article)
+}
+
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to the HomePage!")
 	fmt.Println("Endpoint Hit: homePage")
@@ -30,7 +46,10 @@ func handleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	// replace http.HandleFunc with myRouter.HandleFunc
 	myRouter.HandleFunc("/", homePage)
-	myRouter.HandleFunc("/all", returnAllArticles)
+	myRouter.HandleFunc("/articles", returnAllArticles)
+	// NOTE: ordering is important here! This has to be defined before
+	// the other `article` endpoint
+	myRouter.HandleFunc("/article", createNewArticle).Methods("POST")
 	myRouter.HandleFunc("/article/{id}", returnSingleArticle)
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }

@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"github.com/gorilla/mux"
 )
 
 type Article struct {
-    Title string `json:"Title"`
-    Desc string `json:"desc"`
-    Content string `json:"content"`
+	Id string `json:"Id"`
+	Title string `json:"Title"`
+	Desc string `json:"desc"`
+	Content string `json:"content"`
 }
 
 // let's declare a global Articles array
@@ -24,9 +26,13 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRequests() {
-	http.HandleFunc("/", homePage)
-	http.HandleFunc("/articles", returnAllArticles)
-	log.Fatal(http.ListenAndServe(":10000", nil))
+	// creates a new instance of a mux router
+	myRouter := mux.NewRouter().StrictSlash(true)
+	// replace http.HandleFunc with myRouter.HandleFunc
+	myRouter.HandleFunc("/", homePage)
+	myRouter.HandleFunc("/all", returnAllArticles)
+	myRouter.HandleFunc("/article/{id}", returnSingleArticle)
+	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
 
 func returnAllArticles(w http.ResponseWriter, r *http.Request){
@@ -34,10 +40,25 @@ func returnAllArticles(w http.ResponseWriter, r *http.Request){
 	json.NewEncoder(w).Encode(Articles)
 }
 
+func returnSingleArticle(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r)
+	key := vars["id"]
+
+	// Loop over all of the articles
+	// if the article.Id equals the key we pass in
+	// return the article encoded as JSON
+	for _, article := range Articles{
+		if article.Id == key {
+			json.NewEncoder(w).Encode(article)
+		}
+	}
+}
+
 func main() {
+	fmt.Println("Rest API v2.0 - Mux Routers")
 	Articles=[]Article{
-		Article{Title: "Hello", Desc: "Article Description", Content: "Article Content"},
-		Article{Title: "Hello2", Desc: "Article Description", Content: "Article Content"},
+		Article{Id: "1", Title: "Hello", Desc: "Article Description", Content: "Article Content"},
+		Article{Id: "2", Title: "Hello2", Desc: "Article Description", Content: "Article Content"},
 	}
 	handleRequests()
 }
